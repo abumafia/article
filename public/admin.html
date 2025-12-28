@@ -496,7 +496,7 @@
         // Overview
         async function loadOverview() {
             try {
-                const response = await fetch('/api/admin/stats', {
+                const response = await fetch('https://article-uz.onrender.com/api/admin/stats', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -622,7 +622,7 @@
         async function loadRecentActivity() {
             try {
                 // Get recent articles
-                const articlesResponse = await fetch('/api/articles?limit=5&status=all', {
+                const articlesResponse = await fetch('https://article-uz.onrender.com/api/articles?limit=5&status=all', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -668,7 +668,7 @@
             const role = document.getElementById('roleFilter').value;
             
             try {
-                const response = await fetch('/api/admin/users', {
+                const response = await fetch('https://article-uz.onrender.com/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -747,7 +747,7 @@
             if (!confirm(`Change user role to ${role}?`)) return;
             
             try {
-                const response = await fetch(`/api/admin/users/${userId}/role`, {
+                const response = await fetch(`https://article-uz.onrender.com/api/admin/users/${userId}/role`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -783,7 +783,7 @@
             
             try {
                 const params = new URLSearchParams({ status: status === 'all' ? '' : status });
-                const response = await fetch(`/api/articles?${params}`, {
+                const response = await fetch(`https://article-uz.onrender.com/api/articles?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -892,7 +892,7 @@
             }
             
             try {
-                const response = await fetch(`/api/admin/payments/${currentPaymentId}/verify`, {
+                const response = await fetch(`https://article-uz.onrender.com/api/admin/payments/${currentPaymentId}/verify`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -937,7 +937,7 @@
         async function loadReviewers() {
             // Load pending articles for assignment
             try {
-                const response = await fetch('/api/articles?status=pending', {
+                const response = await fetch('https://article-uz.onrender.com/api/articles?status=pending', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -960,7 +960,7 @@
             
             // Load reviewers
             try {
-                const response = await fetch('/api/admin/users', {
+                const response = await fetch('https://article-uz.onrender.com/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
