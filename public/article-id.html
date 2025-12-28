@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Details - AcademicPublish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Academic Metadata for SEO -->
+    <meta name="citation_title" content="" id="metaTitle">
+    <meta name="citation_author" content="" id="metaAuthor">
+    <meta name="citation_publication_date" content="" id="metaDate">
+    <meta name="citation_journal_title" content="AcademicPublish">
+    <meta name="citation_doi" content="" id="metaDOI">
+    <meta name="citation_abstract" content="" id="metaAbstract">
+    <meta name="citation_keywords" content="" id="metaKeywords">
+    <meta name="citation_pdf_url" content="" id="metaPDF">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2">
+                    <i class="bi bi-journal-text text-2xl text-indigo-600"></i>
+                    <span class="text-xl font-bold text-gray-800">AcademicPublish</span>
+                </a>
+                <div class="flex items-center space-x-4" id="navAuth">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Loading article...</p>
+        </div>
+
+        <!-- Article Content -->
+        <div id="articleContent" class="hidden">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-full text-sm font-medium"
+                              id="articleCategory">
+                            Science
+                        </span>
+                        <span class="ml-3 text-gray-500 text-sm">
+                            <i class="bi bi-calendar mr-1"></i>
+                            <span id="articleDate">2024-01-15</span>
+                        </span>
+                        <span class="ml-3 text-gray-500 text-sm">
+                            <i class="bi bi-tag mr-1"></i>
+                            DOI: <span id="articleDOI" class="font-mono">10.1000/123456</span>
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Status: <span id="articleStatus" class="font-medium">Accepted</span>
+                    </div>
+                </div>
+
+                <h1 class="text-3xl font-bold text-gray-900 mb-4" id="articleTitle">
+                    Article Title Here
+                </h1>
+
+                <!-- Authors -->
+                <div class="mb-6" id="authorsSection">
+                    <h3 class="text-sm text-gray-500 mb-2">Authors</h3>
+                    <div class="flex flex-wrap gap-4" id="authorsList">
+                        <!-- Authors will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Abstract -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Abstract</h2>
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <p class="text-gray-700 leading-relaxed" id="articleAbstract">
+                            Article abstract will appear here...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Keywords -->
+                <div class="mb-8">
+                    <h3 class="text-sm text-gray-500 mb-3">Keywords</h3>
+                    <div class="flex flex-wrap gap-2" id="keywordsList">
+                        <!-- Keywords will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-wrap gap-4 pt-6 border-t">
+                    <a href="#" id="downloadPDF"
+                       class="inline-flex items-center px-5 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="bi bi-file-pdf mr-2"></i> Download PDF
+                    </a>
+                    <button onclick="copyCitation('apa')"
+                            class="inline-flex items-center px-5 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-clipboard mr-2"></i> Copy APA Citation
+                    </button>
+                    <button onclick="copyCitation('ieee')"
+                            class="inline-flex items-center px-5 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-clipboard mr-2"></i> Copy IEEE Citation
+                    </button>
+                    <button onclick="shareArticle()"
+                            class="inline-flex items-center px-5 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-share mr-2"></i> Share
+                    </button>
+                </div>
+            </div>
+
+            <!-- References -->
+            <div class="bg-white rounded-lg shadow p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">References</h2>
+                <div class="space-y-4" id="referencesList">
+                    <!-- References will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Citation Box -->
+            <div class="bg-white rounded-lg shadow p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">How to Cite This Article</h2>
+                
+                <div class="space-y-6">
+                    <!-- APA Format -->
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">APA 7th Edition</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <code class="text-sm text-gray-800" id="apaCitation">
+                                Loading citation...
+                            </code>
+                            <button onclick="copyCitation('apa')"
+                                    class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">
+                                <i class="bi bi-clipboard mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- IEEE Format -->
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">IEEE</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <code class="text-sm text-gray-800" id="ieeeCitation">
+                                Loading citation...
+                            </code>
+                            <button onclick="copyCitation('ieee')"
+                                    class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">
+                                <i class="bi bi-clipboard mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- BibTeX -->
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">BibTeX</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <pre class="text-sm text-gray-800 whitespace-pre-wrap" id="bibtexCitation">
+@article{id,
+  title = {},
+  author = {},
+  journal = {AcademicPublish},
+  year = {},
+  doi = {}
+}</pre>
+                            <button onclick="copyBibtex()"
+                                    class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">
+                                <i class="bi bi-clipboard mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Article Information -->
+            <div class="bg-white rounded-lg shadow p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Article Information</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">Submission Details</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Submitted:</span>
+                                <span class="text-gray-800" id="submissionDate"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Accepted:</span>
+                                <span class="text-gray-800" id="acceptanceDate"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Review Type:</span>
+                                <span class="text-gray-800" id="reviewType"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">Copyright & License</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-start">
+                                <i class="bi bi-c-circle text-gray-400 mr-2 mt-0.5"></i>
+                                <span class="text-gray-600">
+                                    © <span id="copyrightYear"></span> The Authors. 
+                                    Published under Creative Commons Attribution 4.0 International License.
+                                </span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="bi bi-shield-check text-gray-400 mr-2 mt-0.5"></i>
+                                <span class="text-gray-600">
+                                    This article has been peer-reviewed and accepted for publication.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden text-center py-12">
+            <i class="bi bi-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Article Not Found</h3>
+            <p class="text-gray-600 mb-6">The requested article could not be found or is not publicly available.</p>
+            <a href="/articles" class="inline-flex items-center px-5 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                <i class="bi bi-arrow-left mr-2"></i> Back to Articles
+            </a>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+        <i class="bi bi-check-circle mr-2"></i>
+        <span id="notificationText">Copied to clipboard</span>
+    </div>
+
+    <script>
+        // Get article ID from URL
+        const articleId = window.location.pathname.split('/').pop();
+        
+        // Check authentication and update navigation
+        const token = localStorage.getItem('token');
+        const user = token ? JSON.parse(localStorage.getItem('user')) : null;
+        
+        const navAuth = document.getElementById('navAuth');
+        if (user) {
+            navAuth.innerHTML = `
+                <span class="text-gray-600">Welcome, ${user.fullName}</span>
+                <a href="/" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-house mr-1"></i>Home
+                </a>
+                <a href="/articles" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-journals mr-1"></i>Browse
+                </a>
+                ${user.role === 'reviewer' || user.role === 'admin' ? 
+                    `<a href="/reviewer" class="text-gray-600 hover:text-indigo-600">
+                        <i class="bi bi-eye mr-1"></i>Reviewer
+                    </a>` : ''}
+                ${user.role === 'admin' ? 
+                    `<a href="/admin" class="text-gray-600 hover:text-indigo-600">
+                        <i class="bi bi-gear mr-1"></i>Admin
+                    </a>` : ''}
+                <button onclick="logout()" class="text-red-600 hover:text-red-700">
+                    <i class="bi bi-box-arrow-right mr-1"></i>Logout
+                </button>
+            `;
+        } else {
+            navAuth.innerHTML = `
+                <a href="/" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-house mr-1"></i>Home
+                </a>
+                <a href="/articles" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-journals mr-1"></i>Browse
+                </a>
+                <a href="/register-login" class="text-indigo-600 hover:text-indigo-700">
+                    <i class="bi bi-person-circle mr-1"></i>Login
+                </a>
+            `;
+        }
+
+        // Load article data
+        async function loadArticle() {
+            try {
+                const response = await fetch(`/api/articles/${articleId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayArticle(result.article);
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Error loading article:', error);
+                showError();
+            }
+        }
+
+        function displayArticle(article) {
+            // Hide loading, show content
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('articleContent').classList.remove('hidden');
+            
+            // Set SEO metadata
+            document.getElementById('metaTitle').content = article.title;
+            document.getElementById('metaAuthor').content = article.authors.map(a => a.name).join(', ');
+            document.getElementById('metaDate').content = new Date(article.submissionDate).getFullYear();
+            document.getElementById('metaDOI').content = article.doiId;
+            document.getElementById('metaAbstract').content = article.abstract.substring(0, 200);
+            document.getElementById('metaKeywords').content = article.keywords.join(', ');
+            document.getElementById('metaPDF').content = article.articleFile?.url || '';
+            
+            // Update document title
+            document.title = `${article.title} - AcademicPublish`;
+            
+            // Basic info
+            document.getElementById('articleTitle').textContent = article.title;
+            document.getElementById('articleCategory').textContent = article.category;
+            document.getElementById('articleDate').textContent = 
+                new Date(article.submissionDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            document.getElementById('articleDOI').textContent = article.doiId;
+            document.getElementById('articleAbstract').textContent = article.abstract;
+            
+            // Status
+            const statusElement = document.getElementById('articleStatus');
+            statusElement.textContent = article.status.charAt(0).toUpperCase() + article.status.slice(1);
+            statusElement.className = 'font-medium ' + getStatusColor(article.status);
+            
+            // Authors
+            const authorsList = document.getElementById('authorsList');
+            authorsList.innerHTML = '';
+            
+            article.authors.forEach(author => {
+                const authorDiv = document.createElement('div');
+                authorDiv.className = 'flex items-center space-x-3 p-3 border rounded-lg';
+                authorDiv.innerHTML = `
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="bi bi-person text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-800">${author.name}</div>
+                        <div class="text-sm text-gray-600">${author.institution}</div>
+                        <div class="text-xs text-gray-500">${author.email}</div>
+                    </div>
+                `;
+                authorsList.appendChild(authorDiv);
+            });
+            
+            // Keywords
+            const keywordsList = document.getElementById('keywordsList');
+            keywordsList.innerHTML = '';
+            
+            article.keywords.forEach(keyword => {
+                const span = document.createElement('span');
+                span.className = 'px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm';
+                span.textContent = keyword;
+                keywordsList.appendChild(span);
+            });
+            
+            // References
+            const referencesList = document.getElementById('referencesList');
+            referencesList.innerHTML = '';
+            
+            article.references.forEach((ref, index) => {
+                const refDiv = document.createElement('div');
+                refDiv.className = 'flex items-start';
+                refDiv.innerHTML = `
+                    <span class="text-gray-500 mr-3 mt-1">[${index + 1}]</span>
+                    <span class="text-gray-700">${ref}</span>
+                `;
+                referencesList.appendChild(refDiv);
+            });
+            
+            // Download link
+            if (article.articleFile?.url) {
+                const downloadLink = document.getElementById('downloadPDF');
+                downloadLink.href = article.articleFile.url;
+                downloadLink.download = article.title.replace(/\s+/g, '_') + '.pdf';
+            } else {
+                document.getElementById('downloadPDF').style.display = 'none';
+            }
+            
+            // Generate citations
+            generateCitations(article);
+            
+            // Additional info
+            document.getElementById('submissionDate').textContent = 
+                new Date(article.submissionDate).toLocaleDateString();
+            
+            const acceptanceDate = article.updatedAt || article.submissionDate;
+            document.getElementById('acceptanceDate').textContent = 
+                new Date(acceptanceDate).toLocaleDateString();
+            
+            document.getElementById('reviewType').textContent = article.priceType;
+            document.getElementById('copyrightYear').textContent = 
+                new Date(article.submissionDate).getFullYear();
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'accepted': 'text-green-600',
+                'pending': 'text-yellow-600',
+                'rejected': 'text-red-600',
+                'under_review': 'text-blue-600',
+                'payment_pending': 'text-orange-600'
+            };
+            return colors[status] || 'text-gray-600';
+        }
+
+        function generateCitations(article) {
+            const authorsString = article.authors.map(a => a.name).join(', ');
+            const year = new Date(article.submissionDate).getFullYear();
+            
+            // APA Citation
+            const apaCitation = `${authorsString} (${year}). ${article.title}. AcademicPublish. https://doi.org/${article.doiId}`;
+            document.getElementById('apaCitation').textContent = apaCitation;
+            
+            // IEEE Citation
+            const firstAuthor = article.authors[0]?.name || 'Author';
+            const ieeeCitation = `${firstAuthor} et al., "${article.title}," AcademicPublish, ${year}, doi: ${article.doiId}`;
+            document.getElementById('ieeeCitation').textContent = ieeeCitation;
+            
+            // BibTeX
+            const bibtex = `@article{${article.doiId.replace(/[^a-zA-Z0-9]/g, '_')},
+  title = {${article.title}},
+  author = {${authorsString}},
+  journal = {AcademicPublish},
+  year = {${year}},
+  volume = {},
+  number = {},
+  pages = {},
+  doi = {${article.doiId}}
+}`;
+            document.getElementById('bibtexCitation').textContent = bibtex;
+        }
+
+        function copyCitation(format) {
+            let text = '';
+            
+            if (format === 'apa') {
+                text = document.getElementById('apaCitation').textContent;
+            } else if (format === 'ieee') {
+                text = document.getElementById('ieeeCitation').textContent;
+            }
+            
+            navigator.clipboard.writeText(text)
+                .then(() => showNotification('Citation copied to clipboard'))
+                .catch(err => console.error('Copy failed:', err));
+        }
+
+        function copyBibtex() {
+            const text = document.getElementById('bibtexCitation').textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => showNotification('BibTeX copied to clipboard'))
+                .catch(err => console.error('Copy failed:', err));
+        }
+
+        function shareArticle() {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    text: document.getElementById('articleTitle').textContent,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => showNotification('Link copied to clipboard'))
+                    .catch(err => console.error('Copy failed:', err));
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notificationText').textContent = message;
+            
+            notification.classList.remove('hidden');
+            notification.classList.add('animate-fadeIn');
+            
+            setTimeout(() => {
+                notification.classList.remove('animate-fadeIn');
+                notification.classList.add('animate-fadeOut');
+                
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                    notification.classList.remove('animate-fadeOut');
+                }, 500);
+            }, 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        // Load article on page load
+        document.addEventListener('DOMContentLoaded', loadArticle);
+    </script>
+    
+    <style>
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .animate-fadeOut {
+            animation: fadeOut 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(10px); }
+        }
+    </style>
+</body>
+</html>

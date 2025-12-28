@@ -1,0 +1,228 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AcademicPublish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .auth-container {
+            min-height: calc(100vh - 64px);
+        }
+        .form-input {
+            transition: border 0.3s;
+        }
+        .form-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .role-card {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .role-card:hover, .role-card.selected {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="/" class="flex items-center space-x-2">
+                    <i class="bi bi-journal-text text-2xl text-indigo-600"></i>
+                    <span class="text-xl font-bold text-gray-800">AcademicPublish</span>
+                </a>
+                <a href="/" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-arrow-left mr-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Auth Container -->
+    <div class="auth-container flex items-center justify-center py-12 px-4 fade-in">
+        <div class="w-full max-w-md">
+            <!-- Messages -->
+            <div id="message" class="hidden mb-4 p-4 rounded"></div>
+
+            <!-- Role Selection -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Ro'yxatdan o'tish</h2>
+                <p class="text-gray-600 mb-6 text-center">Qaysi rolni tanlaysiz?</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="role-card border-2 rounded-lg p-4 text-center" onclick="selectRole('user')" id="userRole">
+                        <i class="bi bi-person text-3xl text-indigo-600 mb-2 block"></i>
+                        <h3 class="font-semibold">Muallif (User)</h3>
+                        <p class="text-sm text-gray-600">Ilmiy maqolalar yuklovchi va chop etuvchi</p>
+                    </div>
+                    <div class="role-card border-2 rounded-lg p-4 text-center" onclick="selectRole('reviewer')" id="reviewerRole">
+                        <i class="bi bi-eye text-3xl text-green-600 mb-2 block"></i>
+                        <h3 class="font-semibold">Reviewer</h3>
+                        <p class="text-sm text-gray-600">Maqolalarni baholovchi mutaxassis</p>
+                    </div>
+                </div>
+                <div id="roleError" class="text-red-600 text-sm mt-2 text-center hidden">Rol tanlang</div>
+            </div>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Full Name *</label>
+                        <input type="text" name="fullName" required 
+                               class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                               placeholder="Dr. John Smith">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Institution *</label>
+                        <input type="text" name="institution" required 
+                               class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                               placeholder="University of Science">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">Email Address *</label>
+                    <input type="email" name="email" required 
+                           class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                           placeholder="researcher@university.edu">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2">ORCID (Optional)</label>
+                    <input type="text" name="orcid" 
+                           class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                           placeholder="0000-0000-0000-0000">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Password *</label>
+                        <input type="password" name="password" required 
+                               class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                               placeholder="•••••••• (kamida 8 belgi, katta harf va raqam)">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Confirm Password *</label>
+                        <input type="password" name="confirmPassword" required 
+                               class="form-input w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-indigo-500"
+                               placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p class="mb-2">Ro'yxatdan o'tish orqali siz quyidagilarga rozilik bildirasiz:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Original tadqiqot yuklash</li>
+                        <li>Axloqiy qoidalarga rioya qilish</li>
+                        <li>Manfaatlar to'qnashuvini e'lon qilish</li>
+                    </ul>
+                </div>
+                <button type="submit" 
+                        class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+                    <i class="bi bi-person-plus mr-2"></i>Create Account
+                </button>
+                <div class="text-center">
+                    <a href="/login" class="text-sm text-indigo-600 hover:underline">Allaqaachon akkaunt bor? Kirish</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedRole = null;
+
+        function selectRole(role) {
+            selectedRole = role;
+            document.getElementById('userRole').addEventListener('click', () => selectRole('user'));
+            document.getElementById('reviewerRole').addEventListener('click', () => selectRole('reviewer'));
+            document.getElementById(role + 'Role').classList.add('selected');
+            document.getElementById('roleError').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function showMessage(text, type = 'error') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `mb-4 p-4 rounded ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            messageDiv.classList.remove('hidden');
+            messageDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Email validatsiya funksiyasi
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // Parol kuchliligi
+        function isStrongPassword(password) {
+            return password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
+        }
+
+        // Register form submission (role qo'shildi)
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            // Rol tekshiruvi
+            if (!selectedRole) {
+                document.getElementById('roleError').classList.remove('hidden');
+                return;
+            }
+            data.role = selectedRole;  // Rolni qo'shish (faqat user/reviewer)
+            
+            // Validatsiyalar
+            if (!isValidEmail(data.email)) {
+                showMessage('Noto\'g\'ri email format');
+                return;
+            }
+            if (!isStrongPassword(data.password)) {
+                showMessage('Parol kamida 8 belgi, katta harf va raqam bo\'lishi kerak');
+                return;
+            }
+            if (data.password !== data.confirmPassword) {
+                showMessage('Parollar mos kelmaydi');
+                return;
+            }
+            if (data.fullName.trim().length < 2 || data.institution.trim().length < 2) {
+                showMessage('Ism va muassasa to\'ldirilishi shart');
+                return;
+            }
+            
+            // Remove confirmPassword from data
+            delete data.confirmPassword;
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    showMessage('Ro\'yxatdan o\'tish muvaffaqiyatli! Xush kelibsiz.', 'success');
+                    setTimeout(() => {
+                        if (selectedRole === 'reviewer') {
+                            window.location.href = '/reviewer';
+                        } else {
+                            window.location.href = '/add-article';
+                        }
+                    }, 1500);
+                } else {
+                    showMessage(result.error || 'Ro\'yxatdan o\'tish muvaffaqiyatsiz');
+                }
+            } catch (error) {
+                showMessage('Tarmoq xatosi. Qayta urinib ko\'ring.');
+            }
+        });
+    </script>
+</body>
+</html>

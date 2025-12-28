@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - AcademicPublish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .payment-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        .step-active {
+            background: #4f46e5;
+            color: white;
+        }
+        .step-completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .payment-card {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .payment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .payment-card.selected {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+        .error-message {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .success-message {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.3s, background-color 0.3s;
+            cursor: pointer;
+        }
+        .drop-zone.drag-over {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2">
+                    <i class="bi bi-journal-text text-2xl text-indigo-600"></i>
+                    <span class="text-xl font-bold text-gray-800">AcademicPublish</span>
+                </a>
+                <div class="flex items-center space-x-4" id="navAuth">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Messages -->
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Payment Steps -->
+        <div class="payment-step">
+            <div class="step-number step-active">1</div>
+            <div>
+                <div class="font-medium">Article Information</div>
+                <div class="text-sm text-gray-500">Review your submission details</div>
+            </div>
+        </div>
+        
+        <div class="payment-step">
+            <div class="step-number step-pending" id="step2Number">2</div>
+            <div>
+                <div class="font-medium">Payment Method</div>
+                <div class="text-sm text-gray-500">Select how you want to pay</div>
+            </div>
+        </div>
+        
+        <div class="payment-step">
+            <div class="step-number step-pending" id="step3Number">3</div>
+            <div>
+                <div class="font-medium">Confirmation</div>
+                <div class="text-sm text-gray-500">Complete your payment</div>
+            </div>
+        </div>
+
+        <!-- Article Summary -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8" id="articleSummary">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800" id="articleTitle">Loading article...</h3>
+                    <div class="flex items-center space-x-3 mt-2">
+                        <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm" id="articleCategory">
+                            Loading...
+                        </span>
+                        <span class="text-sm text-gray-500">
+                            DOI: <span id="articleDOI" class="font-mono">Loading...</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-indigo-600" id="articlePrice">Loading...</div>
+                    <div class="text-sm text-gray-500" id="reviewType">Loading...</div>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <h4 class="font-medium text-gray-700 mb-2">Authors</h4>
+                <div class="text-gray-600" id="articleAuthors">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8 hidden" id="paymentMethods">
+            <h3 class="text-xl font-bold text-gray-800 mb-6">Select Payment Method</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="payment-card border-2 rounded-lg p-4" data-method="card">
+                    <div class="flex items-center">
+                        <div class="w-12 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded flex items-center justify-center mr-4">
+                            <i class="bi bi-credit-card text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium">Credit/Debit Card</div>
+                            <div class="text-sm text-gray-500">Visa, MasterCard, etc.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-card border-2 rounded-lg p-4" data-method="bank">
+                    <div class="flex items-center">
+                        <div class="w-12 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded flex items-center justify-center mr-4">
+                            <i class="bi bi-bank text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium">Bank Transfer</div>
+                            <div class="text-sm text-gray-500">Direct bank payment</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Payment Form -->
+            <form id="cardForm" class="hidden space-y-4">
+                <h4 class="font-medium text-gray-700 mb-4">Card Details</h4>
+                
+                <div>
+                    <label class="block text-gray-700 mb-2">Card Number</label>
+                    <input type="text" name="cardNumber" required
+                           class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500"
+                           placeholder="1234 5678 9012 3456"
+                           maxlength="19"
+                           pattern="\d{4} \d{4} \d{4} \d{4}">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Expiry Date</label>
+                        <input type="text" name="expiryDate" required
+                               class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500"
+                               placeholder="MM/YY"
+                               maxlength="5"
+                               pattern="(0[1-9]|1[0-2])/[0-9]{2}">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">CVV</label>
+                        <input type="text" name="cvv" required
+                               class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500"
+                               placeholder="123"
+                               maxlength="3"
+                               pattern="\d{3}">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Cardholder Name</label>
+                        <input type="text" name="cardholderName" required
+                               class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500"
+                               placeholder="John Smith">
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button type="button" onclick="proceedToConfirmation('card')"
+                            class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition">
+                        Pay Now
+                    </button>
+                </div>
+            </form>
+
+            <!-- Bank Transfer Info -->
+            <div id="bankInfo" class="hidden">
+                <h4 class="font-medium text-gray-700 mb-4">Bank Transfer Details</h4>
+                
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Bank Name:</span>
+                            <span class="font-medium">AcademicPublish Bank</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Account Name:</span>
+                            <span class="font-medium">AcademicPublish Inc.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Account Number:</span>
+                            <span class="font-mono font-medium">1234 5678 9012 3456</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">SWIFT/BIC:</span>
+                            <span class="font-mono font-medium">ACADUS33</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Reference:</span>
+                            <span class="font-mono font-medium" id="paymentReference">AP-123456</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Amount:</span>
+                            <span class="font-bold text-indigo-600" id="bankAmount">$50.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h5 class="font-medium text-gray-700 mb-3">Important Instructions:</h5>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li class="flex items-start">
+                            <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                            <span>Use the reference number above in your transfer description</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                            <span>Pay the exact amount shown above</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                            <span>Upload proof of payment in the next step</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                            <span>Processing may take 1-3 business days</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        <i class="bi bi-info-circle mr-1"></i>
+                        You'll upload payment proof in the next step
+                    </div>
+                    <button type="button" onclick="proceedToConfirmation('bank')"
+                            class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Confirmation -->
+        <div class="bg-white rounded-lg shadow p-6 hidden" id="paymentConfirmation">
+            <h3 class="text-xl font-bold text-gray-800 mb-6">Upload Payment Proof</h3>
+            
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="font-medium text-gray-700">Payment Method</div>
+                        <div class="text-lg" id="selectedMethodDisplay">Credit Card</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium text-gray-700">Amount to Pay</div>
+                        <div class="text-2xl font-bold text-indigo-600" id="confirmationAmount">$50</div>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div class="flex">
+                        <i class="bi bi-exclamation-triangle text-yellow-600 mr-3 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-medium text-yellow-800">Important Notice</h4>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Your article review will only begin after payment verification by our admin team.
+                                Please upload clear proof of payment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="mb-8">
+                <label class="block text-gray-700 mb-2 required">Upload Payment Screenshot/Receipt</label>
+                <div class="drop-zone" id="dropZone">
+                    <i class="bi bi-cloud-arrow-up text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 mb-2">Drag & drop your payment proof here</p>
+                    <p class="text-sm text-gray-500 mb-4">or</p>
+                    <input type="file" id="paymentFile" accept=".jpg,.jpeg,.png,.pdf" required
+                           class="hidden">
+                    <label for="paymentFile"
+                           class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 cursor-pointer transition">
+                        Browse Files
+                    </label>
+                    <p class="text-sm text-gray-500 mt-4">Accepted formats: JPG, PNG, PDF (Max: 5MB)</p>
+                </div>
+                <div id="fileInfo" class="mt-4 hidden">
+                    <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="bi bi-file-text text-green-600 text-xl mr-3"></i>
+                            <div>
+                                <div class="font-medium text-green-800" id="fileName"></div>
+                                <div class="text-sm text-green-600" id="fileSize"></div>
+                            </div>
+                        </div>
+                        <button type="button" id="removePaymentFileBtn"
+                                class="text-red-600 hover:text-red-800">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions for Screenshot -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                <h4 class="font-medium text-gray-700 mb-3">What to include in your screenshot:</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-start">
+                        <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                        <span class="text-sm text-gray-600">Transaction ID/Reference</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                        <span class="text-sm text-gray-600">Amount paid</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                        <span class="text-sm text-gray-600">Date of transaction</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="bi bi-check-circle text-green-500 mr-2 mt-0.5"></i>
+                        <span class="text-sm text-gray-600">Sender's account details (masked)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button type="button" onclick="goBackToMethods()"
+                        class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition">
+                    <i class="bi bi-arrow-left mr-2"></i> Back
+                </button>
+                <button type="button" onclick="submitPayment()" id="submitBtn"
+                        class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
+                        disabled>
+                    <i class="bi bi-check-circle mr-2"></i> Submit Payment Proof
+                </button>
+            </div>
+        </div>
+
+        <!-- Payment Complete -->
+        <div class="bg-white rounded-lg shadow p-8 text-center hidden" id="paymentComplete">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="bi bi-check-lg text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Payment Proof Submitted!</h3>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                Thank you for submitting your payment proof. Our admin team will verify it within 24-48 hours.
+                You'll receive an email notification once your payment is verified and the review process begins.
+            </p>
+            <div class="space-y-4">
+                <a href="/" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition">
+                    <i class="bi bi-house mr-2"></i> Return to Home
+                </a>
+                <div class="text-sm text-gray-500">
+                    Need help? <a href="mailto:support@academicpublish.org" class="text-indigo-600 hover:underline">Contact support</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-8 text-center max-w-sm">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <h3 class="text-lg font-medium text-gray-800 mb-2" id="loadingTitle">Processing</h3>
+                <p class="text-gray-600" id="loadingMessage">Please wait...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get article ID from URL (fixed for optional param)
+        const pathParts = window.location.pathname.split('/');
+        const articleId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get('articleId');
+        if (!articleId) {
+            document.body.innerHTML = '<div class="text-center py-8"><h2 class="text-xl font-bold text-red-600">Error: Article ID not found</h2><a href="/" class="mt-4 inline-block text-indigo-600">Go Home</a></div>';
+            throw new Error('No article ID');
+        }
+        
+        // Authentication check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = `/register-login?redirect=/payment/${articleId}`;
+            return;
+        }
+        
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Update navigation
+        const navAuth = document.getElementById('navAuth');
+        navAuth.innerHTML = `
+            <span class="text-gray-600">Welcome, ${user.fullName || 'User'}</span>
+            <a href="/" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-house mr-1"></i>Home
+            </a>
+            <a href="/articles" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-journals mr-1"></i>Browse
+            </a>
+            <button id="logoutBtn" class="text-red-600 hover:text-red-700">
+                <i class="bi bi-box-arrow-right mr-1"></i>Logout
+            </button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        
+        // State
+        let currentStep = 1;
+        let selectedMethod = null;
+        let paymentFile = null;
+        let articleData = null;
+        
+        // DOM elements
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const articleSummary = document.getElementById('articleSummary');
+        const paymentMethods = document.getElementById('paymentMethods');
+        const paymentConfirmation = document.getElementById('paymentConfirmation');
+        const paymentComplete = document.getElementById('paymentComplete');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('paymentFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupPaymentCards();
+            setupFileUpload();
+            await loadArticleData();
+        });
+        
+        async function loadArticleData() {
+            showLoading('Loading article information...');
+            
+            try {
+                const response = await fetch(`/api/articles/${articleId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    articleData = result.article;
+                    displayArticleInfo();
+                    
+                    // Check if payment already submitted
+                    if (articleData.payment?.screenshot?.url) {
+                        showSuccess('Payment proof already submitted. Awaiting admin verification.');
+                        showPaymentComplete();
+                        return;
+                    }
+                    
+                    // Proceed to payment methods
+                    setTimeout(() => {
+                        document.getElementById('step2Number').className = 'step-number step-active';
+                        paymentMethods.classList.remove('hidden');
+                    }, 500);
+                } else {
+                    throw new Error(result.error || 'Article not found');
+                }
+            } catch (error) {
+                console.error('Error loading article:', error);
+                showError('Failed to load article information: ' + error.message);
+                articleSummary.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="bi bi-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Error Loading Article</h3>
+                        <p class="text-gray-600 mb-6">${error.message}</p>
+                        <a href="/articles" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">
+                            Browse Articles
+                        </a>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function displayArticleInfo() {
+            document.getElementById('articleTitle').textContent = articleData.title;
+            document.getElementById('articleCategory').textContent = articleData.category;
+            document.getElementById('articleDOI').textContent = articleData.doiId;
+            document.getElementById('articlePrice').textContent = `$${articleData.price}`;
+            document.getElementById('reviewType').textContent = articleData.priceType;
+            
+            // Authors
+            const authorsString = articleData.authors.map(a => a.name).join(', ');
+            document.getElementById('articleAuthors').textContent = authorsString || 'N/A';
+            
+            // Set bank transfer reference
+            const refNumber = `AP-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+            document.getElementById('paymentReference').textContent = refNumber;
+            document.getElementById('bankAmount').textContent = `$${articleData.price}.00`;
+            document.getElementById('confirmationAmount').textContent = `$${articleData.price}`;
+        }
+        
+        // Payment method selection (event delegation for better handling)
+        function setupPaymentCards() {
+            document.querySelectorAll('.payment-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const method = card.dataset.method;
+                    selectPayment(method);
+                });
+            });
+        }
+        
+        function selectPayment(method) {
+            selectedMethod = method;
+            
+            // Update UI
+            document.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-method="${method}"]`).classList.add('selected');
+            
+            // Show appropriate form
+            document.getElementById('cardForm').classList.add('hidden');
+            document.getElementById('bankInfo').classList.add('hidden');
+            
+            if (method === 'card') {
+                document.getElementById('cardForm').classList.remove('hidden');
+                // Basic card validation
+                const cardForm = document.getElementById('cardForm');
+                cardForm.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', validateCardForm);
+                });
+                validateCardForm();
+            } else {
+                document.getElementById('bankInfo').classList.remove('hidden');
+            }
+        }
+        
+        function validateCardForm() {
+            const form = document.getElementById('cardForm');
+            const inputs = form.querySelectorAll('input[required]');
+            const isValid = Array.from(inputs).every(input => input.value.trim() && input.checkValidity());
+            const btn = form.querySelector('button[type="button"]');
+            btn.disabled = !isValid;
+            btn.textContent = isValid ? 'Pay Now' : 'Complete card details';
+        }
+        
+        function proceedToConfirmation(method) {
+            if (method) selectedMethod = method;
+            if (!selectedMethod) {
+                showError('Please select a payment method first.');
+                return;
+            }
+            
+            // Validate card form if selected
+            if (selectedMethod === 'card') {
+                const cardForm = document.getElementById('cardForm');
+                if (!cardForm.querySelector('button[type="button"]').disabled) {
+                    // For simulation, proceed; in real, integrate Stripe/PayPal
+                    showSuccess('Card payment processed successfully (simulation). Proceeding to proof upload.');
+                } else {
+                    showError('Please complete card details.');
+                    return;
+                }
+            }
+            
+            // Update UI for step 3
+            currentStep = 3;
+            document.getElementById('step3Number').className = 'step-number step-active';
+            paymentMethods.classList.add('hidden');
+            paymentConfirmation.classList.remove('hidden');
+            
+            // Display selected method
+            const methodDisplay = selectedMethod === 'card' ? 'Credit/Debit Card' : 'Bank Transfer';
+            document.getElementById('selectedMethodDisplay').textContent = methodDisplay;
+        }
+        
+        function goBackToMethods() {
+            currentStep = 2;
+            document.getElementById('step3Number').className = 'step-number step-pending';
+            paymentConfirmation.classList.add('hidden');
+            paymentMethods.classList.remove('hidden');
+        }
+        
+        // File upload (fixed with better event handling)
+        function setupFileUpload() {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            ['dragover', 'dragenter'].forEach(event => {
+                dropZone.addEventListener(event, (e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('drag-over');
+                });
+            });
+            
+            ['dragleave', 'dragend'].forEach(event => {
+                dropZone.addEventListener(event, (e) => {
+                    e.currentTarget.classList.remove('drag-over');
+                });
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) {
+                    handlePaymentFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handlePaymentFile(e.target.files[0]);
+                }
+            });
+            
+            document.getElementById('removePaymentFileBtn').addEventListener('click', removePaymentFile);
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files[0]) {
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+        
+        function handlePaymentFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if (!validTypes.includes(file.type)) {
+                showError('Invalid file type. Please upload JPG, PNG, or PDF files only.');
+                return;
+            }
+            
+            if (file.size > maxSize) {
+                showError('File size exceeds 5MB limit.');
+                return;
+            }
+            
+            paymentFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+            dropZone.classList.add('hidden');
+            submitBtn.disabled = false;
+            showSuccess('File uploaded successfully.');
+        }
+        
+        function removePaymentFile() {
+            paymentFile = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            submitBtn.disabled = true;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Submit payment (fixed API call and error handling)
+        async function submitPayment() {
+            if (!paymentFile) {
+                showError('Please upload payment proof first.');
+                return;
+            }
+            
+            showLoading('Submitting payment proof...');
+            submitBtn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('screenshot', paymentFile);
+            
+            try {
+                const response = await fetch(`/api/payments/${articleId}/screenshot`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Payment proof submitted successfully! Awaiting admin verification.');
+                    setTimeout(() => {
+                        showPaymentComplete();
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Failed to submit payment proof');
+                }
+            } catch (error) {
+                console.error('Payment submission error:', error);
+                showError('Failed to submit: ' + error.message);
+                submitBtn.disabled = false;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function showPaymentComplete() {
+            paymentConfirmation.classList.add('hidden');
+            paymentComplete.classList.remove('hidden');
+        }
+        
+        // Utility functions (improved)
+        function showLoading(message) {
+            document.getElementById('loadingTitle').textContent = 'Processing';
+            document.getElementById('loadingMessage').textContent = message;
+            loadingOverlay.classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            errorMessage.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 10000);
+        }
+        
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            successMessage.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>

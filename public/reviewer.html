@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviewer Dashboard - AcademicPublish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-review {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-accepted {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .article-card {
+            transition: all 0.3s;
+        }
+        .article-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .review-modal {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2">
+                    <i class="bi bi-journal-text text-2xl text-indigo-600"></i>
+                    <span class="text-xl font-bold text-gray-800">AcademicPublish</span>
+                </a>
+                <div class="flex items-center space-x-4" id="navAuth">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Reviewer Dashboard</h1>
+                    <p class="text-gray-600">Review and evaluate submitted articles</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <select id="statusFilter" onchange="loadArticles()"
+                                class="border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500">
+                            <option value="all">All Articles</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="under_review">Under Review</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <i class="bi bi-person-circle mr-1"></i>
+                        <span id="reviewerName">Loading...</span>
+                    </div>
+                </div>
+            </div>
+           
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-indigo-600" id="pendingCount">0</div>
+                            <div class="text-sm text-gray-500">Pending Review</div>
+                        </div>
+                        <i class="bi bi-clock-history text-3xl text-indigo-100"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-blue-600" id="reviewCount">0</div>
+                            <div class="text-sm text-gray-500">Under Review</div>
+                        </div>
+                        <i class="bi bi-eye text-3xl text-blue-100"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-green-600" id="acceptedCount">0</div>
+                            <div class="text-sm text-gray-500">Accepted</div>
+                        </div>
+                        <i class="bi bi-check-circle text-3xl text-green-100"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-red-600" id="rejectedCount">0</div>
+                            <div class="text-sm text-gray-500">Rejected</div>
+                        </div>
+                        <i class="bi bi-x-circle text-3xl text-red-100"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Articles List -->
+        <div id="articlesContainer" class="space-y-4">
+            <!-- Articles will be loaded here -->
+            <div class="text-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Loading articles for review...</p>
+            </div>
+        </div>
+        <!-- No Articles -->
+        <div id="noArticles" class="hidden text-center py-12">
+            <i class="bi bi-journal-check text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">No Articles to Review</h3>
+            <p class="text-gray-500">You're all caught up! Check back later for new submissions.</p>
+        </div>
+    </div>
+    <!-- Review Modal -->
+    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-full p-4">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl review-modal">
+                    <!-- Modal Header -->
+                    <div class="border-b p-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">Review Article</h3>
+                            <button onclick="closeReviewModal()"
+                                    class="text-gray-400 hover:text-gray-600">
+                                <i class="bi bi-x-lg text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <h4 class="font-medium text-gray-700" id="modalTitle">Article Title</h4>
+                            <div class="flex items-center space-x-3 mt-2">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm"
+                                      id="modalCategory">Category</span>
+                                <span class="text-sm text-gray-500">
+                                    DOI: <span id="modalDOI" class="font-mono">10.1000/123456</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                   
+                    <!-- Modal Content -->
+                    <div class="p-6 max-h-[60vh] overflow-y-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <!-- Article Preview -->
+                            <div class="md:col-span-2">
+                                <h5 class="font-medium text-gray-700 mb-2">Article Preview</h5>
+                                <div class="border rounded-lg p-4 h-64 overflow-y-auto">
+                                    <div id="articlePreview">
+                                        <!-- Article content will be loaded here -->
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="#" id="downloadLink" target="_blank"
+                                       class="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+                                        <i class="bi bi-download mr-2"></i>
+                                        Download Full Article
+                                    </a>
+                                </div>
+                            </div>
+                           
+                            <!-- Article Info -->
+                            <div>
+                                <h5 class="font-medium text-gray-700 mb-2">Article Information</h5>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="text-sm text-gray-500">Authors</div>
+                                        <div class="font-medium" id="modalAuthors">Loading...</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500">Institution</div>
+                                        <div class="font-medium" id="modalInstitution">Loading...</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500">Submission Date</div>
+                                        <div class="font-medium" id="modalDate">Loading...</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500">Review Type</div>
+                                        <div class="font-medium" id="modalReviewType">Loading...</div>
+                                    </div>
+                                </div>
+                               
+                                <div class="mt-6">
+                                    <h5 class="font-medium text-gray-700 mb-2">Previous Reviews</h5>
+                                    <div id="previousReviews" class="space-y-2">
+                                        <!-- Previous reviews will be loaded here -->
+                                        <div class="text-sm text-gray-500 italic">No previous reviews</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                        <!-- Review Form -->
+                        <div class="border-t pt-6">
+                            <h5 class="font-medium text-gray-700 mb-4">Your Review</h5>
+                           
+                            <div class="space-y-6">
+                                <!-- Decision -->
+                                <div>
+                                    <label class="block text-gray-700 mb-3">Decision *</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-green-50"
+                                               onclick="selectDecision('accept')">
+                                            <input type="radio" name="decision" value="accept" class="mr-3 text-green-600">
+                                            <div>
+                                                <div class="font-medium text-green-700">Accept</div>
+                                                <div class="text-sm text-gray-500">Article meets publication standards</div>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-red-50"
+                                               onclick="selectDecision('reject')">
+                                            <input type="radio" name="decision" value="reject" class="mr-3 text-red-600">
+                                            <div>
+                                                <div class="font-medium text-red-700">Reject</div>
+                                                <div class="text-sm text-gray-500">Article does not meet standards</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                               
+                                <!-- Comments -->
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Review Comments *</label>
+                                    <textarea id="reviewComments" rows="6"
+                                              class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500"
+                                              placeholder="Provide detailed feedback for the authors and editor..."></textarea>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Your comments will be shared with the authors (if accepted) or editor (if rejected).
+                                    </p>
+                                </div>
+                               
+                                <!-- Review Checklist -->
+                                <div class="border rounded-lg p-4">
+                                    <h6 class="font-medium text-gray-700 mb-3">Review Checklist</h6>
+                                    <div class="space-y-2">
+                                        <label class="flex items-start">
+                                            <input type="checkbox" class="mt-1 mr-3 text-indigo-600">
+                                            <span class="text-sm text-gray-600">Originality and significance of research</span>
+                                        </label>
+                                        <label class="flex items-start">
+                                            <input type="checkbox" class="mt-1 mr-3 text-indigo-600">
+                                            <span class="text-sm text-gray-600">Methodological soundness</span>
+                                        </label>
+                                        <label class="flex items-start">
+                                            <input type="checkbox" class="mt-1 mr-3 text-indigo-600">
+                                            <span class="text-sm text-gray-600">Clarity of presentation</span>
+                                        </label>
+                                        <label class="flex items-start">
+                                            <input type="checkbox" class="mt-1 mr-3 text-indigo-600">
+                                            <span class="text-sm text-gray-600">Adequacy of references</span>
+                                        </label>
+                                        <label class="flex items-start">
+                                            <input type="checkbox" class="mt-1 mr-3 text-indigo-600">
+                                            <span class="text-sm text-gray-600">Ethical considerations addressed</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                   
+                    <!-- Modal Footer -->
+                    <div class="border-t p-6">
+                        <div class="flex justify-between">
+                            <button onclick="closeReviewModal()"
+                                    class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button onclick="submitReview()"
+                                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700">
+                                <i class="bi bi-check-circle mr-2"></i> Submit Review
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+        <i class="bi bi-check-circle mr-2"></i>
+        <span id="notificationText">Review submitted successfully</span>
+    </div>
+    <script>
+        // Authentication and authorization check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/register-login';
+        }
+       
+        const user = JSON.parse(localStorage.getItem('user'));
+       
+        // Check if user is reviewer or admin
+        if (user.role !== 'reviewer' && user.role !== 'admin') {
+            window.location.href = '/';
+        }
+       
+        // Update navigation and header
+        document.getElementById('reviewerName').textContent = user.fullName;
+       
+        const navAuth = document.getElementById('navAuth');
+        navAuth.innerHTML = `
+            <span class="text-gray-600">Reviewer: ${user.fullName}</span>
+            <a href="/" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-house mr-1"></i>Home
+            </a>
+            <a href="/articles" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-journals mr-1"></i>Browse
+            </a>
+            ${user.role === 'admin' ?
+                `<a href="/admin" class="text-gray-600 hover:text-indigo-600">
+                    <i class="bi bi-gear mr-1"></i>Admin
+                </a>` : ''}
+            <button onclick="logout()" class="text-red-600 hover:text-red-700">
+                <i class="bi bi-box-arrow-right mr-1"></i>Logout
+            </button>
+        `;
+       
+        // State
+        let currentArticleId = null;
+        let articles = [];
+       
+        // Load articles on page load
+        document.addEventListener('DOMContentLoaded', loadArticles);
+       
+        async function loadArticles() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            let url = '/api/reviewer/articles';
+            if (statusFilter !== 'all') {
+                url += `?status=${statusFilter}`;
+            }
+           
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+               
+                const result = await response.json();
+                console.log('API Response:', result); // Debug uchun qo'shildi
+               
+                if (result.success) {
+                    articles = result.articles || [];
+                    displayArticles(articles);
+                    updateStats(articles);
+                } else {
+                    console.error('API Error:', result.error);
+                    showError(result.error || 'Failed to load articles');
+                }
+            } catch (error) {
+                console.error('Error loading articles:', error);
+                showError('Network error. Please try again.');
+            }
+        }
+       
+        function displayArticles(articles) {
+            const container = document.getElementById('articlesContainer');
+            const noArticles = document.getElementById('noArticles');
+           
+            if (articles.length === 0) {
+                container.innerHTML = '';
+                noArticles.classList.remove('hidden');
+                return;
+            }
+           
+            noArticles.classList.add('hidden');
+            container.innerHTML = '';
+           
+            articles.forEach(article => {
+                const card = document.createElement('div');
+                card.className = 'article-card bg-white rounded-lg shadow p-6';
+               
+                // Format date
+                const date = new Date(article.submissionDate || Date.now()).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+               
+                // Authors string
+                const authors = (article.authors || []).map(a => a.name || 'Unknown').join(', ');
+               
+                // Status badge
+                const statusClass = getStatusClass(article.status);
+                const statusText = getStatusText(article.status);
+               
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
+                                    ${article.category || 'N/A'}
+                                </span>
+                                <span class="text-sm text-gray-500">
+                                    <i class="bi bi-calendar mr-1"></i>${date}
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">${article.title || 'No Title'}</h3>
+                            <p class="text-gray-600 line-clamp-2 mb-3">${article.abstract || 'No abstract available'}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500">
+                                    <i class="bi bi-person-circle mr-1"></i>
+                                    ${authors}
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="viewArticle('${article._id}')"
+                                            class="text-indigo-600 hover:text-indigo-800">
+                                        <i class="bi bi-eye mr-1"></i>Preview
+                                    </button>
+                                    <button onclick="openReviewModal('${article._id}')"
+                                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                                        <i class="bi bi-pencil-square mr-1"></i>Review
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+               
+                container.appendChild(card);
+            });
+        }
+       
+        function updateStats(articles) {
+            const pending = articles.filter(a => a.status === 'pending').length;
+            const underReview = articles.filter(a => a.status === 'under_review').length;
+            const accepted = articles.filter(a => a.status === 'accepted').length;
+            const rejected = articles.filter(a => a.status === 'rejected').length;
+           
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('reviewCount').textContent = underReview;
+            document.getElementById('acceptedCount').textContent = accepted;
+            document.getElementById('rejectedCount').textContent = rejected;
+        }
+       
+        function getStatusClass(status) {
+            const classes = {
+                'pending': 'status-pending',
+                'under_review': 'status-review',
+                'accepted': 'status-accepted',
+                'rejected': 'status-rejected',
+                'payment_pending': 'status-pending'
+            };
+            return classes[status] || 'status-pending';
+        }
+       
+        function getStatusText(status) {
+            const texts = {
+                'pending': 'Pending',
+                'under_review': 'Under Review',
+                'accepted': 'Accepted',
+                'rejected': 'Rejected',
+                'payment_pending': 'Payment Pending'
+            };
+            return texts[status] || status || 'Unknown';
+        }
+       
+        // Article preview in modal
+        async function viewArticle(articleId) {
+            try {
+                const response = await fetch(`/api/articles/${articleId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+               
+                const result = await response.json();
+               
+                if (result.success) {
+                    // Open article in new tab or show in modal
+                    window.open(`/articles/${articleId}`, '_blank');
+                }
+            } catch (error) {
+                console.error('Error viewing article:', error);
+            }
+        }
+       
+        // Review modal
+        async function openReviewModal(articleId) {
+            currentArticleId = articleId;
+           
+            try {
+                const response = await fetch(`/api/articles/${articleId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+               
+                const result = await response.json();
+               
+                if (result.success) {
+                    const article = result.article;
+                   
+                    // Update modal content
+                    document.getElementById('modalTitle').textContent = article.title || 'No Title';
+                    document.getElementById('modalCategory').textContent = article.category || 'N/A';
+                    document.getElementById('modalDOI').textContent = article.doiId || 'N/A';
+                    document.getElementById('modalAuthors').textContent =
+                        (article.authors || []).map(a => a.name || 'Unknown').join(', ');
+                    document.getElementById('modalInstitution').textContent =
+                        (article.authors || [])[0]?.institution || 'Not specified';
+                    document.getElementById('modalDate').textContent =
+                        new Date(article.submissionDate || Date.now()).toLocaleDateString();
+                    document.getElementById('modalReviewType').textContent = article.priceType || 'N/A';
+                   
+                    // Article preview
+                    document.getElementById('articlePreview').innerHTML = `
+                        <h6 class="font-medium mb-2">Abstract</h6>
+                        <p class="text-gray-700 mb-4">${article.abstract || 'No abstract available'}</p>
+                       
+                        <h6 class="font-medium mb-2">Keywords</h6>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${(article.keywords || []).map(k => `
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">${k}</span>
+                            `).join('')}
+                        </div>
+                    `;
+                   
+                    // Download link
+                    const downloadLink = document.getElementById('downloadLink');
+                    if (article.articleFile?.url) {
+                        downloadLink.href = article.articleFile.url;
+                        downloadLink.download = (article.title || 'article').replace(/\s+/g, '_') + '.pdf';
+                    } else {
+                        downloadLink.href = '#';
+                        downloadLink.classList.add('pointer-events-none', 'opacity-50');
+                    }
+                   
+                    // Previous reviews
+                    const previousReviews = document.getElementById('previousReviews');
+                    if (article.reviewComments && article.reviewComments.length > 0) {
+                        previousReviews.innerHTML = article.reviewComments.map(review => `
+                            <div class="border rounded p-3">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="text-sm font-medium">${review.reviewerId?.fullName || 'Reviewer'}</div>
+                                    <span class="px-2 py-1 ${review.decision === 'accept' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded text-xs">
+                                        ${review.decision === 'accept' ? 'Accepted' : 'Rejected'}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">${review.comment || ''}</div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    ${new Date(review.date || Date.now()).toLocaleDateString()}
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        previousReviews.innerHTML = `
+                            <div class="text-sm text-gray-500 italic">No previous reviews</div>
+                        `;
+                    }
+                   
+                    // Show modal
+                    document.getElementById('reviewModal').classList.remove('hidden');
+                    document.body.classList.add('overflow-hidden');
+                }
+            } catch (error) {
+                console.error('Error opening review modal:', error);
+                alert('Failed to load article details');
+            }
+        }
+       
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            currentArticleId = null;
+           
+            // Reset form
+            document.querySelectorAll('input[name="decision"]').forEach(input => input.checked = false);
+            document.getElementById('reviewComments').value = '';
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+       
+        function selectDecision(decision) {
+            document.querySelectorAll('input[name="decision"]').forEach(input => {
+                input.checked = input.value === decision;
+            });
+        }
+       
+        async function submitReview() {
+            const decision = document.querySelector('input[name="decision"]:checked');
+            const comment = document.getElementById('reviewComments').value;
+           
+            if (!decision) {
+                alert('Please select a decision');
+                return;
+            }
+           
+            if (!comment.trim()) {
+                alert('Please provide review comments');
+                return;
+            }
+           
+            try {
+                const response = await fetch(`/api/reviewer/articles/${currentArticleId}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        decision: decision.value,
+                        comment: comment
+                    })
+                });
+               
+                const result = await response.json();
+               
+                if (result.success) {
+                    showNotification('Review submitted successfully');
+                    closeReviewModal();
+                    loadArticles(); // Refresh the list
+                } else {
+                    alert(result.error || 'Failed to submit review');
+                }
+            } catch (error) {
+                console.error('Error submitting review:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+       
+        // Utility functions
+        function showError(message) {
+            const container = document.getElementById('articlesContainer');
+            container.innerHTML = `
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    <div class="flex items-center">
+                        <i class="bi bi-exclamation-triangle mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            `;
+        }
+       
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notificationText').textContent = message;
+           
+            notification.classList.remove('hidden');
+            notification.classList.add('animate-fadeIn');
+           
+            setTimeout(() => {
+                notification.classList.remove('animate-fadeIn');
+                notification.classList.add('animate-fadeOut');
+               
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                    notification.classList.remove('animate-fadeOut');
+                }, 500);
+            }, 3000);
+        }
+       
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+    </script>
+   
+    <style>
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease;
+        }
+       
+        .animate-fadeOut {
+            animation: fadeOut 0.3s ease;
+        }
+       
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(10px); }
+        }
+       
+        .line-clamp-2 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+    </style>
+</body>
+</html>

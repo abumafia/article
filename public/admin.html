@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AcademicPublish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        .dashboard-card {
+            transition: all 0.3s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            border-bottom-color: #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-verified { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2">
+                    <i class="bi bi-journal-text text-2xl text-indigo-600"></i>
+                    <span class="text-xl font-bold text-gray-800">AcademicPublish</span>
+                </a>
+                <div class="flex items-center space-x-4" id="navAuth">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+                    <p class="text-gray-600">Manage platform users, articles, and payments</p>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="bi bi-shield-check mr-1"></i>
+                    <span id="adminName">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" id="quickStats">
+                <!-- Stats will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-8">
+            <div class="flex space-x-1 border-b">
+                <button class="tab-button active" onclick="switchTab('overview')">
+                    <i class="bi bi-speedometer2 mr-2"></i>Overview
+                </button>
+                <button class="tab-button" onclick="switchTab('users')">
+                    <i class="bi bi-people mr-2"></i>Users
+                </button>
+                <button class="tab-button" onclick="switchTab('articles')">
+                    <i class="bi bi-journals mr-2"></i>Articles
+                </button>
+                <button class="tab-button" onclick="switchTab('payments')">
+                    <i class="bi bi-credit-card mr-2"></i>Payments
+                </button>
+                <button class="tab-button" onclick="switchTab('reviewers')">
+                    <i class="bi bi-eye mr-2"></i>Reviewers
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="tabContents">
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overviewTab">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Chart 1: Articles by Status -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Articles by Status</h3>
+                        <div class="h-64">
+                            <canvas id="articlesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart 2: Articles by Category -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Articles by Category</h3>
+                        <div class="h-64">
+                            <canvas id="categoriesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="border-b p-6">
+                                <h3 class="text-lg font-bold text-gray-800">Recent Activity</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4" id="recentActivity">
+                                    <!-- Activity will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content" id="usersTab">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b p-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800">User Management</h3>
+                            <div class="flex space-x-2">
+                                <input type="text" id="userSearch" placeholder="Search users..."
+                                       class="border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500">
+                                <select id="roleFilter" onchange="loadUsers()"
+                                        class="border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500">
+                                    <option value="all">All Roles</option>
+                                    <option value="user">Users</option>
+                                    <option value="reviewer">Reviewers</option>
+                                    <option value="admin">Admins</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Institution</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Articles</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Joined</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTable">
+                                    <!-- Users will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4 text-center text-gray-500" id="usersLoading">
+                            Loading users...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articles Tab -->
+            <div class="tab-content" id="articlesTab">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b p-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800">Article Management</h3>
+                            <div class="flex space-x-2">
+                                <select id="articleStatusFilter" onchange="loadArticles()"
+                                        class="border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500">
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="under_review">Under Review</option>
+                                    <option value="accepted">Accepted</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="payment_pending">Payment Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Title</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Category</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Authors</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Submitted</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="articlesTable">
+                                    <!-- Articles will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div class="tab-content" id="paymentsTab">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b p-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800">Payment Management</h3>
+                            <div class="flex space-x-2">
+                                <select id="paymentStatusFilter" onchange="loadPayments()"
+                                        class="border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500">
+                                    <option value="all">All Payments</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="verified">Verified</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Article</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Method</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Submitted</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Proof</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentsTable">
+                                    <!-- Payments will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviewers Tab -->
+            <div class="tab-content" id="reviewersTab">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Assign Reviewer -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Assign Reviewer</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-700 mb-2">Select Article</label>
+                                <select id="assignArticle" class="w-full border rounded-lg px-4 py-2">
+                                    <option value="">Select article...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-700 mb-2">Select Reviewer</label>
+                                <select id="assignReviewer" class="w-full border rounded-lg px-4 py-2">
+                                    <option value="">Select reviewer...</option>
+                                </select>
+                            </div>
+                            <button onclick="assignReviewer()"
+                                    class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
+                                Assign Reviewer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reviewer Stats -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="border-b p-6">
+                                <h3 class="text-lg font-bold text-gray-800">Reviewer Performance</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-50">
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Reviewer</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Assigned</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Completed</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Accept Rate</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Avg. Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reviewersTable">
+                                            <!-- Reviewers will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Verification Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-full p-4">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
+                    <div class="border-b p-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800">Verify Payment</h3>
+                            <button onclick="closePaymentModal()"
+                                    class="text-gray-400 hover:text-gray-600">
+                                <i class="bi bi-x-lg text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <div class="text-center mb-4">
+                                <div class="text-2xl font-bold text-indigo-600" id="paymentAmount">$50</div>
+                                <div class="text-sm text-gray-500">Payment Amount</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="text-sm text-gray-500 mb-1">Payment Proof</div>
+                                <a href="#" id="paymentImageLink" target="_blank" 
+                                   class="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+                                    <i class="bi bi-eye mr-1"></i> View Screenshot
+                                </a>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="text-sm text-gray-500 mb-2">Payment Details</div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Article:</span>
+                                        <span class="font-medium" id="paymentArticle"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Author:</span>
+                                        <span class="font-medium" id="paymentAuthor"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Submitted:</span>
+                                        <span class="font-medium" id="paymentDate"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <label class="flex items-start">
+                                <input type="checkbox" id="verifyPayment" class="mt-1 mr-3 text-indigo-600">
+                                <span class="text-gray-700">
+                                    I confirm that the payment has been verified and matches the required amount.
+                                </span>
+                            </label>
+                            
+                            <div id="rejectionReason" class="hidden">
+                                <label class="block text-sm text-gray-700 mb-2">Rejection Reason</label>
+                                <textarea id="rejectionText" rows="3"
+                                          class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500"
+                                          placeholder="Specify why the payment is being rejected..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t p-6">
+                        <div class="flex justify-between">
+                            <button onclick="rejectPayment()"
+                                    class="border border-red-300 text-red-600 px-6 py-3 rounded-lg font-medium hover:bg-red-50">
+                                Reject
+                            </button>
+                            <button onclick="verifyPayment()"
+                                    class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700">
+                                <i class="bi bi-check-circle mr-2"></i> Verify Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+        <i class="bi bi-check-circle mr-2"></i>
+        <span id="notificationText">Action completed successfully</span>
+    </div>
+
+    <script>
+        // Authentication and authorization check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/register-login';
+        }
+        
+        const user = JSON.parse(localStorage.getItem('user'));
+        
+        // Check if user is admin
+        if (user.role !== 'admin') {
+            window.location.href = '/';
+        }
+        
+        // Update navigation and header
+        document.getElementById('adminName').textContent = user.fullName;
+        
+        const navAuth = document.getElementById('navAuth');
+        navAuth.innerHTML = `
+            <span class="text-gray-600">Admin: ${user.fullName}</span>
+            <a href="/" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-house mr-1"></i>Home
+            </a>
+            <a href="/articles" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-journals mr-1"></i>Browse
+            </a>
+            <a href="/reviewer" class="text-gray-600 hover:text-indigo-600">
+                <i class="bi bi-eye mr-1"></i>Reviewer
+            </a>
+            <button onclick="logout()" class="text-red-600 hover:text-red-700">
+                <i class="bi bi-box-arrow-right mr-1"></i>Logout
+            </button>
+        `;
+        
+        // State
+        let currentPaymentId = null;
+        let charts = {};
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadOverview();
+            loadUsers();
+        });
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            
+            // Load tab data
+            switch(tabName) {
+                case 'overview':
+                    loadOverview();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'articles':
+                    loadArticles();
+                    break;
+                case 'payments':
+                    loadPayments();
+                    break;
+                case 'reviewers':
+                    loadReviewers();
+                    break;
+            }
+        }
+        
+        // Overview
+        async function loadOverview() {
+            try {
+                const response = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateQuickStats(result.stats);
+                    createCharts(result.stats);
+                    loadRecentActivity();
+                }
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+        
+        function updateQuickStats(stats) {
+            const container = document.getElementById('quickStats');
+            container.innerHTML = `
+                <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-indigo-600">${stats.totalUsers}</div>
+                            <div class="text-sm text-gray-500">Total Users</div>
+                        </div>
+                        <i class="bi bi-people text-3xl text-indigo-100"></i>
+                    </div>
+                </div>
+                <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-blue-600">${stats.totalArticles}</div>
+                            <div class="text-sm text-gray-500">Total Articles</div>
+                        </div>
+                        <i class="bi bi-journals text-3xl text-blue-100"></i>
+                    </div>
+                </div>
+                <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-yellow-600">${stats.pendingPayments}</div>
+                            <div class="text-sm text-gray-500">Pending Payments</div>
+                        </div>
+                        <i class="bi bi-clock-history text-3xl text-yellow-100"></i>
+                    </div>
+                </div>
+                <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-purple-600">${stats.pendingReviews}</div>
+                            <div class="text-sm text-gray-500">Pending Reviews</div>
+                        </div>
+                        <i class="bi bi-eye text-3xl text-purple-100"></i>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function createCharts(stats) {
+            // Articles by Status Chart
+            const articlesByStatus = stats.articlesByStatus.reduce((acc, item) => {
+                acc[item._id] = item.count;
+                return acc;
+            }, {});
+            
+            const statusCtx = document.getElementById('articlesChart').getContext('2d');
+            if (charts.articles) charts.articles.destroy();
+            
+            charts.articles = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'Under Review', 'Accepted', 'Rejected', 'Payment Pending'],
+                    datasets: [{
+                        data: [
+                            articlesByStatus.pending || 0,
+                            articlesByStatus.under_review || 0,
+                            articlesByStatus.accepted || 0,
+                            articlesByStatus.rejected || 0,
+                            articlesByStatus.payment_pending || 0
+                        ],
+                        backgroundColor: [
+                            '#fbbf24',
+                            '#60a5fa',
+                            '#34d399',
+                            '#f87171',
+                            '#9ca3af'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Articles by Category Chart
+            const categoriesCtx = document.getElementById('categoriesChart').getContext('2d');
+            if (charts.categories) charts.categories.destroy();
+            
+            const categoryData = stats.articlesByCategory || [];
+            
+            charts.categories = new Chart(categoriesCtx, {
+                type: 'bar',
+                data: {
+                    labels: categoryData.map(item => item._id),
+                    datasets: [{
+                        label: 'Articles',
+                        data: categoryData.map(item => item.count),
+                        backgroundColor: '#4f46e5'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadRecentActivity() {
+            try {
+                // Get recent articles
+                const articlesResponse = await fetch('/api/articles?limit=5&status=all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const articlesResult = await articlesResponse.json();
+                
+                if (articlesResult.success) {
+                    const container = document.getElementById('recentActivity');
+                    container.innerHTML = '';
+                    
+                    articlesResult.articles.forEach(article => {
+                        const activity = document.createElement('div');
+                        activity.className = 'flex items-center justify-between p-4 border rounded-lg';
+                        
+                        const statusClass = getStatusClass(article.status);
+                        const statusText = getStatusText(article.status);
+                        
+                        activity.innerHTML = `
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="bi bi-journal-text text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-800">${article.title}</div>
+                                    <div class="text-sm text-gray-500">
+                                        ${new Date(article.submissionDate).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        `;
+                        
+                        container.appendChild(activity);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+            }
+        }
+        
+        // Users Management
+        async function loadUsers() {
+            const search = document.getElementById('userSearch').value;
+            const role = document.getElementById('roleFilter').value;
+            
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayUsers(result.users, search, role);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+        
+        function displayUsers(users, search, role) {
+            const container = document.getElementById('usersTable');
+            const loading = document.getElementById('usersLoading');
+            
+            if (!users || users.length === 0) {
+                loading.textContent = 'No users found';
+                container.innerHTML = '';
+                return;
+            }
+            
+            loading.style.display = 'none';
+            
+            // Filter users
+            let filteredUsers = users;
+            
+            if (search) {
+                filteredUsers = filteredUsers.filter(user => 
+                    user.fullName.toLowerCase().includes(search.toLowerCase()) ||
+                    user.email.toLowerCase().includes(search.toLowerCase())
+                );
+            }
+            
+            if (role !== 'all') {
+                filteredUsers = filteredUsers.filter(user => user.role === role);
+            }
+            
+            container.innerHTML = '';
+            
+            filteredUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="font-medium">${user.fullName}</div>
+                        ${user.orcid ? `<div class="text-xs text-gray-500">ORCID: ${user.orcid}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3">${user.email}</td>
+                    <td class="px-4 py-3">${user.institution}</td>
+                    <td class="px-4 py-3">
+                        <select onchange="updateUserRole('${user._id}', this.value)"
+                                class="border rounded px-2 py-1 text-sm ${user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'reviewer' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                            <option value="reviewer" ${user.role === 'reviewer' ? 'selected' : ''}>Reviewer</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        </select>
+                    </td>
+                    <td class="px-4 py-3">0</td> <!-- Would need actual article count -->
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                        ${new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td class="px-4 py-3">
+                        <button onclick="deleteUser('${user._id}')"
+                                class="text-red-600 hover:text-red-800">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+        
+        async function updateUserRole(userId, role) {
+            if (!confirm(`Change user role to ${role}?`)) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('User role updated successfully');
+                    loadUsers(); // Refresh the list
+                } else {
+                    alert(result.error || 'Failed to update role');
+                }
+            } catch (error) {
+                console.error('Error updating user role:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+        
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+            
+            // Note: You would need to implement this endpoint
+            alert('Delete user functionality would be implemented here');
+        }
+        
+        // Articles Management
+        async function loadArticles() {
+            const status = document.getElementById('articleStatusFilter').value;
+            
+            try {
+                const params = new URLSearchParams({ status: status === 'all' ? '' : status });
+                const response = await fetch(`/api/articles?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayArticles(result.articles);
+                }
+            } catch (error) {
+                console.error('Error loading articles:', error);
+            }
+        }
+        
+        function displayArticles(articles) {
+            const container = document.getElementById('articlesTable');
+            
+            if (!articles || articles.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            No articles found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            articles.forEach(article => {
+                const statusClass = getStatusClass(article.status);
+                const statusText = getStatusText(article.status);
+                const authors = article.authors.map(a => a.name).join(', ');
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="font-medium">${article.title}</div>
+                        <div class="text-xs text-gray-500">DOI: ${article.doiId}</div>
+                    </td>
+                    <td class="px-4 py-3">${article.category}</td>
+                    <td class="px-4 py-3">${authors}</td>
+                    <td class="px-4 py-3">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                        ${new Date(article.submissionDate).toLocaleDateString()}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex space-x-2">
+                            <a href="/articles/${article._id}" target="_blank"
+                               class="text-indigo-600 hover:text-indigo-800">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button onclick="editArticle('${article._id}')"
+                                    class="text-green-600 hover:text-green-800">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button onclick="deleteArticle('${article._id}')"
+                                    class="text-red-600 hover:text-red-800">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+        
+        function editArticle(articleId) {
+            // Implement article editing
+            alert('Edit article functionality would be implemented here');
+        }
+        
+        function deleteArticle(articleId) {
+            if (!confirm('Are you sure you want to delete this article?')) return;
+            alert('Delete article functionality would be implemented here');
+        }
+        
+        // Payments Management
+        async function loadPayments() {
+            // Note: You would need to implement a payments API endpoint
+            alert('Payment management would load payment data here');
+        }
+        
+        function openPaymentModal(paymentId) {
+            currentPaymentId = paymentId;
+            // Load payment details and show modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+        
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            currentPaymentId = null;
+        }
+        
+        async function verifyPayment() {
+            const verified = document.getElementById('verifyPayment').checked;
+            
+            if (!verified) {
+                alert('Please confirm verification');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/payments/${currentPaymentId}/verify`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ verified: true })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Payment verified successfully');
+                    closePaymentModal();
+                    loadPayments();
+                } else {
+                    alert(result.error || 'Failed to verify payment');
+                }
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+        
+        function rejectPayment() {
+            const rejectionDiv = document.getElementById('rejectionReason');
+            if (rejectionDiv.classList.contains('hidden')) {
+                rejectionDiv.classList.remove('hidden');
+                return;
+            }
+            
+            const reason = document.getElementById('rejectionText').value;
+            if (!reason.trim()) {
+                alert('Please provide a rejection reason');
+                return;
+            }
+            
+            // Implement rejection logic
+            alert('Payment rejection would be implemented here');
+        }
+        
+        // Reviewers Management
+        async function loadReviewers() {
+            // Load pending articles for assignment
+            try {
+                const response = await fetch('/api/articles?status=pending', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('assignArticle');
+                    select.innerHTML = '<option value="">Select article...</option>';
+                    
+                    result.articles.forEach(article => {
+                        const option = document.createElement('option');
+                        option.value = article._id;
+                        option.textContent = `${article.title} (${article.category})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading articles for assignment:', error);
+            }
+            
+            // Load reviewers
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('assignReviewer');
+                    select.innerHTML = '<option value="">Select reviewer...</option>';
+                    
+                    const reviewers = result.users.filter(user => user.role === 'reviewer');
+                    reviewers.forEach(reviewer => {
+                        const option = document.createElement('option');
+                        option.value = reviewer._id;
+                        option.textContent = `${reviewer.fullName} (${reviewer.institution})`;
+                        select.appendChild(option);
+                    });
+                    
+                    // Display reviewer stats
+                    displayReviewerStats(reviewers);
+                }
+            } catch (error) {
+                console.error('Error loading reviewers:', error);
+            }
+        }
+        
+        function displayReviewerStats(reviewers) {
+            const container = document.getElementById('reviewersTable');
+            container.innerHTML = '';
+            
+            reviewers.forEach(reviewer => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="font-medium">${reviewer.fullName}</div>
+                        <div class="text-xs text-gray-500">${reviewer.email}</div>
+                    </td>
+                    <td class="px-4 py-3">0</td> <!-- Assigned count -->
+                    <td class="px-4 py-3">0</td> <!-- Completed count -->
+                    <td class="px-4 py-3">0%</td> <!-- Accept rate -->
+                    <td class="px-4 py-3">0 days</td> <!-- Avg time -->
+                `;
+                container.appendChild(row);
+            });
+        }
+        
+        async function assignReviewer() {
+            const articleId = document.getElementById('assignArticle').value;
+            const reviewerId = document.getElementById('assignReviewer').value;
+            
+            if (!articleId || !reviewerId) {
+                alert('Please select both article and reviewer');
+                return;
+            }
+            
+            // Implement assignment logic
+            alert('Reviewer assignment would be implemented here');
+        }
+        
+        // Utility functions
+        function getStatusClass(status) {
+            const classes = {
+                'pending': 'status-pending',
+                'under_review': 'status-review',
+                'accepted': 'status-accepted',
+                'rejected': 'status-rejected',
+                'payment_pending': 'status-pending',
+                'verified': 'status-verified',
+                'rejected': 'status-rejected'
+            };
+            return classes[status] || 'status-pending';
+        }
+        
+        function getStatusText(status) {
+            const texts = {
+                'pending': 'Pending',
+                'under_review': 'Under Review',
+                'accepted': 'Accepted',
+                'rejected': 'Rejected',
+                'payment_pending': 'Payment Pending',
+                'verified': 'Verified',
+                'rejected': 'Rejected'
+            };
+            return texts[status] || status;
+        }
+        
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notificationText').textContent = message;
+            
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+        
+        // Initialize search
+        document.getElementById('userSearch').addEventListener('input', loadUsers);
+    </script>
+</body>
+</html>
