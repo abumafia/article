@@ -179,7 +179,7 @@
             if (author) params.append('author', author);
             
             try {
-                const response = await fetch(`/api/articles?${params}`);
+                const response = await fetch(`https://article-uz.onrender.com/api/articles?${params}`);
                 const result = await response.json();
                 
                 if (result.success) {
