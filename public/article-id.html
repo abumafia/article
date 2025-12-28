@@ -286,7 +286,7 @@
         // Load article data
         async function loadArticle() {
             try {
-                const response = await fetch(`/api/articles/${articleId}`);
+                const response = await fetch(`https://article-uz.onrender.com/api/articles/${articleId}`);
                 const result = await response.json();
                 
                 if (result.success) {
